@@ -1,6 +1,6 @@
 require File.join(File.dirname(__FILE__), '..', 'spec_helper')
 
-describe HTTParty::Request do
+module RequestStubbable
   def stub_response(body, code = 200)
     unless @http
       @http = Net::HTTP.new('localhost', 80)
@@ -14,6 +14,10 @@ describe HTTParty::Request do
     @http.stub!(:request).and_return(response)
     response
   end
+end
+
+describe HTTParty::Request do
+  include RequestStubbable
 
   before do
     @request = HTTParty::Request.new(Net::HTTP::Get, 'http://api.foo.com/v1', :format => :xml)
@@ -192,5 +196,47 @@ describe HTTParty::Request, "with POST http method" do
     lambda {
       HTTParty::Request.new(Net::HTTP::Post, 'http://api.foo.com/v1', :format => :xml, :query => 'astring').perform
     }.should raise_error(ArgumentError)
+  end
+end
+
+describe HTTParty::Request, "with multipart POST http method" do
+  TEMP_FILE = "tmp_foo.txt"
+
+  def create_temp_file!
+    File.open(TEMP_FILE, "w") { |fp| fp << "testjlkdsjfkldkfds" }
+  end
+
+  def remove_temp_file!
+    File.delete(TEMP_FILE)
+  end
+
+  include RequestStubbable
+
+  it "should require at least one file to be attached" do
+    lambda {
+      request = HTTParty::Request.new(Net::HTTP::Post::Multipart,
+                                      'http://api.foo.com/v1',
+                                      :multipart => {})
+      request.perform
+    }.should raise_error(ArgumentError)
+  end
+
+  it "should allow multipart as a valid option" do
+    stub_response "Foo"
+
+    lambda {
+      create_temp_file!
+      request = HTTParty::Request.new(Net::HTTP::Post::Multipart,
+                             'http://api.foo.com/v1',
+                             :multipart => {
+                               'file' => {
+                                 :path => TEMP_FILE,
+                                 :type => 'text/plain'
+                               }
+                              })
+
+      request.perform
+      remove_temp_file!
+    }.should_not raise_error
   end
 end

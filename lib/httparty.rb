@@ -7,6 +7,9 @@ require 'rubygems'
 gem 'crack'
 require 'crack'
 
+gem 'multipart-post'
+require 'net/http/post/multipart'
+
 module HTTParty
   
   AllowedFormats = {
@@ -134,8 +137,24 @@ module HTTParty
     #   # Simple post with full url using :query option, 
     #   # which gets set as form data on the request.
     #   Foo.post('http://foo.com/resources', :query => {:bar => 'baz'})
+    #
+    #   # Posting a few files as multipart:
+    #   Foo.post('http://foo.com/resources',
+    #            :multipart => {
+    #              'file' => {
+    #                :path => '/tmp/foo.txt',
+    #                :type => 'text/plain'
+    #              },
+    #              'file2' => {
+    #                :path => '/tmp/foo2.txt',
+    #                :type => 'text/plain'
+    #              }
+    #            }
+    #          )
     def post(path, options={})
-      perform_request Net::HTTP::Post, path, options
+      klass = options[:multipart] ? Net::HTTP::Post::Multipart :
+          Net::HTTP::Post
+      perform_request klass, path, options
     end
 
     def put(path, options={})

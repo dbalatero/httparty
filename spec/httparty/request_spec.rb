@@ -202,7 +202,7 @@ describe HTTParty::Request, "with POST http method" do
   end
 end
 
-describe HTTParty::Request, "with multipart POST http method" do
+describe HTTParty::Request, "with multipart http method" do
   TEMP_FILE = "tmp_foo.txt"
 
   def create_temp_file!
@@ -215,31 +215,33 @@ describe HTTParty::Request, "with multipart POST http method" do
 
   include RequestStubbable
 
-  it "should require at least one file to be attached" do
-    lambda {
-      request = HTTParty::Request.new(Net::HTTP::Post::Multipart,
-                                      'http://api.foo.com/v1',
-                                      :multipart => {})
-      request.perform
-    }.should raise_error(ArgumentError)
-  end
+  [Net::HTTP::Post::Multipart, Net::HTTP::Put::Multipart].each do |klass|
+    it "should require at least one file to be attached with #{klass}" do
+      lambda {
+        request = HTTParty::Request.new(klass,
+                                        'http://api.foo.com/v1',
+                                        :multipart => {})
+        request.perform
+      }.should raise_error(ArgumentError)
+    end
 
-  it "should allow multipart as a valid option" do
-    stub_response "Foo"
+    it "should allow multipart as a valid option with #{klass}" do
+      stub_response "Foo"
 
-    lambda {
-      create_temp_file!
-      request = HTTParty::Request.new(Net::HTTP::Post::Multipart,
-                             'http://api.foo.com/v1',
-                             :multipart => {
-                               'file' => {
-                                 :path => TEMP_FILE,
-                                 :type => 'text/plain'
-                               }
-                              })
+      lambda {
+        create_temp_file!
+        request = HTTParty::Request.new(klass,
+                               'http://api.foo.com/v1',
+                               :multipart => {
+                                 'file' => {
+                                   :path => TEMP_FILE,
+                                   :type => 'text/plain'
+                                 }
+                                })
 
-      request.perform
-      remove_temp_file!
-    }.should_not raise_error
+        request.perform
+        remove_temp_file!
+      }.should_not raise_error
+    end
   end
 end

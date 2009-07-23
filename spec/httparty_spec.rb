@@ -26,7 +26,7 @@ describe HTTParty do
       uri.should == 'http://api.foobar.com'
     end
   end
-  
+
   describe "#normalize_base_uri" do
     it "should add http if not present for non ssl requests" do
       uri = HTTParty.normalize_base_uri('api.foobar.com')

@@ -10,6 +10,8 @@ require 'crack'
 gem 'multipart-post'
 require 'net/http/post/multipart'
 
+require 'httparty/cookie_hash'
+
 module HTTParty
   
   AllowedFormats = {
@@ -29,7 +31,9 @@ module HTTParty
     base.extend ClassMethods
     base.send :include, HTTParty::ModuleInheritableAttributes
     base.send(:mattr_inheritable, :default_options)
+    base.send(:mattr_inheritable, :default_cookies)
     base.instance_variable_set("@default_options", {})
+    base.instance_variable_set("@default_cookies", CookieHash.new)
   end
   
   module ClassMethods
@@ -93,8 +97,7 @@ module HTTParty
 
     def cookies(h={})
       raise ArgumentError, 'Cookies must be a hash' unless h.is_a?(Hash)
-      default_options[:cookies] ||= CookieHash.new
-      default_options[:cookies].add_cookies(h)
+      default_cookies.add_cookies(h)
     end
     
     # Allows setting the format with which to parse.
@@ -105,7 +108,7 @@ module HTTParty
     #     format :json
     #   end
     def format(f)
-      raise UnsupportedFormat, "Must be one of: #{AllowedFormats.values.uniq.join(', ')}" unless AllowedFormats.value?(f)
+      raise UnsupportedFormat, "Must be one of: #{AllowedFormats.values.map { |v| v.to_s }.uniq.sort.join(', ')}" unless AllowedFormats.value?(f)
       default_options[:format] = f
     end
     
@@ -176,11 +179,10 @@ module HTTParty
       end
 
       def process_cookies(options) #:nodoc:
-        return unless options[:cookies] || default_options[:cookies]
+        return unless options[:cookies] || default_cookies
         options[:headers] ||= {}
-        options[:headers]["cookie"] = cookies(options[:cookies] || {}).to_cookie_string
+        options[:headers]["cookie"] = cookies.merge(options[:cookies] || {}).to_cookie_string
 
-        default_options.delete(:cookies)
         options.delete(:cookies)
       end
   end
@@ -217,7 +219,6 @@ module HTTParty
   end
 end
 
-require 'httparty/cookie_hash'
 require 'httparty/core_extensions'
 require 'httparty/exceptions'
 require 'httparty/request'

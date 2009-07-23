@@ -2,7 +2,12 @@ require 'uri'
 
 module HTTParty
   class Request #:nodoc:
-    SupportedHTTPMethods = [Net::HTTP::Get, Net::HTTP::Post, Net::HTTP::Put, Net::HTTP::Delete, Net::HTTP::Post::Multipart]
+    SupportedHTTPMethods = [Net::HTTP::Get,
+                            Net::HTTP::Post,
+                            Net::HTTP::Put,
+                            Net::HTTP::Delete,
+                            Net::HTTP::Post::Multipart,
+                            Net::HTTP::Put::Multipart]
     
     attr_accessor :http_method, :path, :options
     
@@ -183,11 +188,13 @@ module HTTParty
       end
      
       def post?
-        [Net::HTTP::Post, Net::HTTP::Post::Multipart].include?(http_method)
+        [Net::HTTP::Post,
+         Net::HTTP::Post::Multipart].include?(http_method)
       end
 
       def multipart?
-        Net::HTTP::Post::Multipart == http_method
+        [Net::HTTP::Post::Multipart,
+         Net::HTTP::Put::Multipart].include?(http_method)
       end
   end
 end

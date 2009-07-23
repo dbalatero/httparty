@@ -160,8 +160,25 @@ module HTTParty
       perform_request klass, path, options
     end
 
+    # Allows making a put request to a url.
+    #
+    # Posting a few files as multipart:
+    #   Foo.put('http://foo.com/resources',
+    #            :multipart => {
+    #              'file' => {
+    #                :path => '/tmp/foo.txt',
+    #                :type => 'text/plain'
+    #              },
+    #              'file2' => {
+    #                :path => '/tmp/foo2.txt',
+    #                :type => 'text/plain'
+    #              }
+    #            }
+    #          )
     def put(path, options={})
-      perform_request Net::HTTP::Put, path, options
+      klass = options[:multipart] ? Net::HTTP::Put::Multipart :
+          Net::HTTP::Put
+      perform_request klass, path, options
     end
 
     def delete(path, options={})
